@@ -1,8 +1,15 @@
 #[macro_use]
 extern crate rocket;
-extern crate serde;
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
 
+
+use dotenv::dotenv;
 use rocket::serde::{json::Json, Deserialize, Serialize};
+
+mod connection;
+use connection::init_pool;
 
 mod utils;
 use utils::password::generate_password;
@@ -21,15 +28,16 @@ struct User<'r> {
 #[post("/signup", data = "<user>")]
 fn signin(user: Json<User<'_>>) -> Json<User<'_>> {
     let password = generate_password(user.password.clone());
-    Json(
-        User {
-            email: user.email,
-            password: password
-        }
-    )
+    Json(User {
+        email: user.email,
+        password: password,
+    })
 }
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/api", routes![index, signin])
+    dotenv().ok();
+    rocket::build()
+        .manage(init_pool())
+        .mount("/api", routes![index, signin])
 }
