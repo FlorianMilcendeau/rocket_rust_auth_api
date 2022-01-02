@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+jsonwebtoken = "7"
 serde = { version = "1.0", features = ["derive"] }
 rocket = { version = "^0.5.0-rc.1", features = ["json"] }
 diesel = { version = "1.4.4", features = ["mysql"] }
