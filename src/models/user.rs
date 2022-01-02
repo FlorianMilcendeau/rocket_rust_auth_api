@@ -4,9 +4,9 @@ use crate::schema::user;
 #[derive(Queryable, AsChangeset, Serialize, Deserialize, Debug)]
 #[table_name = "user"]
 pub struct User {
-    id: i32,
-    email: String,
-    password: String,
+    pub id: i32,
+    pub email: String,
+    pub password: String,
 }
 
 #[derive(Insertable, Serialize, Deserialize)]
