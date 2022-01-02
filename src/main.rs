@@ -4,6 +4,7 @@ extern crate rocket;
 extern crate diesel;
 extern crate dotenv;
 
+
 use dotenv::dotenv;
 use rocket::serde::{json::Json, Deserialize, Serialize};
 
@@ -13,9 +14,12 @@ mod repository;
 use repository::user_repository::create_user;
 mod models;
 use models::user::{NewUser, User as DbUser};
+mod routes;
+use routes::user::user_routes;
 mod utils;
 use utils::password::generate_password;
 mod schema;
+mod controllers;
 
 #[get("/")]
 fn index() -> &'static str {
@@ -45,5 +49,6 @@ fn rocket() -> _ {
     dotenv().ok();
     rocket::build()
         .manage(init_pool())
-        .mount("/api", routes![index, signup])
+        .mount("/", routes![index, signup])
+        .mount("/users", user_routes())
 }
