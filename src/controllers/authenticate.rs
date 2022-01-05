@@ -5,6 +5,7 @@ use crate::connection::DbConn;
 use crate::models::user::{NewUser, User};
 use crate::repository::user_repository::{create_user, get_user_by_email};
 use crate::utils::http::ApiResponse;
+use crate::utils::jsonwebtoken::{generate_json_web_token, Claims};
 use crate::utils::password::{generate_password, verify_password};
 
 #[derive(Serialize, Deserialize)]
@@ -20,8 +21,17 @@ pub struct UserSignup {
     password: String,
 }
 
+#[derive(Serialize)]
+pub struct AuthResponse {
+    user: User,
+    token: String,
+}
+
 #[post("/signup", data = "<user>")]
-pub fn signup(user: Json<UserSignup>, connection: DbConn) -> Result<Json<User>, ApiResponse> {
+pub fn signup(
+    user: Json<UserSignup>,
+    connection: DbConn,
+) -> Result<Json<AuthResponse>, ApiResponse> {
     let current_user = get_user_by_email(&user.email, &connection).map(|u| Json(u));
 
     println!("User found: {:?}", current_user);
@@ -38,23 +48,34 @@ pub fn signup(user: Json<UserSignup>, connection: DbConn) -> Result<Json<User>, 
                 email: user.email.clone(),
                 password,
             };
-            let user_created = create_user(new_user, &connection).unwrap();
 
-            return Ok(Json(user_created));
+            let user_created = create_user(new_user, &connection).unwrap();
+            let token = generate_json_web_token(Claims::new(
+                user_created.id,
+                &user_created.name,
+                &user_created.email,
+            ))
+            .unwrap();
+
+            return Ok(Json(AuthResponse {
+                user: user_created,
+                token,
+            }));
         }
     }
 }
 
 #[post("/signin", data = "<user>")]
-pub fn signin(user: Json<UserSignIn>, connection: DbConn) -> Result<Json<User>, ApiResponse> {
-    let current_user = get_user_by_email(&user.email, &connection)
-        .map(|u| Json(u))
-        .map_err(|_| {
-            ApiResponse::new(
-                Status::Unauthorized,
-                json!({ "message": "Account does not exist"}),
-            )
-        });
+pub fn signin(
+    user: Json<UserSignIn>,
+    connection: DbConn,
+) -> Result<Json<AuthResponse>, ApiResponse> {
+    let current_user = get_user_by_email(&user.email, &connection).map_err(|_| {
+        ApiResponse::new(
+            Status::Unauthorized,
+            json!({ "message": "Account does not exist"}),
+        )
+    });
 
     match current_user {
         Ok(value) => {
@@ -67,7 +88,10 @@ pub fn signin(user: Json<UserSignIn>, connection: DbConn) -> Result<Json<User>, 
                     json!({ "message": "Password incorrect" }),
                 ));
             }
-            return Ok(value);
+
+            let token =
+                generate_json_web_token(Claims::new(value.id, &value.name, &value.email)).unwrap();
+            return Ok(Json(AuthResponse { user: value, token }));
         }
         Err(error) => Err(error),
     }
