@@ -13,14 +13,24 @@ pub struct User {
 }
 
 #[post("/signup", data = "<user>")]
-pub fn signup(user: Json<User>, connection: DbConn) -> Json<DbUser> {
-    let password = generate_password(user.password.clone());
-    let new_user = NewUser {
-        name: user.name.clone(),
-        email: user.email.clone(),
-        password,
-    };
-    let user_created = create_user(new_user, &connection).unwrap();
+pub fn signup(user: Json<UserSignup>, connection: DbConn) -> Result<Json<User>, ApiResponse> {
+    let current_user = get_user_by_email(&user.email, &connection).map(|u| Json(u));
+
+    println!("User found: {:?}", current_user);
+
+    match current_user {
+        Ok(_) => Err(ApiResponse::new(
+            Status::Unauthorized,
+            json!({ "message": "Account already exist"}),
+        )),
+        Err(_) => {
+            let password = generate_password(user.password.clone());
+            let new_user = NewUser {
+                name: user.name.clone(),
+                email: user.email.clone(),
+                password,
+            };
+            let user_created = create_user(new_user, &connection).unwrap();
 
     Json(user_created)
 }

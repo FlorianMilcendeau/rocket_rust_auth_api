@@ -8,7 +8,7 @@ use crate::schema::user;
 use crate::schema::user::dsl::*;
 
 pub fn create_user(new_user: NewUser, conn: &MysqlConnection) -> QueryResult<User> {
-   diesel::insert_into(user::table)
+    diesel::insert_into(user::table)
         .values(&new_user)
         .execute(conn)?;
 
@@ -17,4 +17,8 @@ pub fn create_user(new_user: NewUser, conn: &MysqlConnection) -> QueryResult<Use
 
 pub fn get_user_by_id(user_id: i32, conn: &MysqlConnection) -> QueryResult<User> {
     user::table.find(user_id).first(conn)
+}
+
+pub fn get_user_by_email(user_email: &String, conn: &MysqlConnection) -> QueryResult<User> {
+    user::table.filter(email.eq(user_email)).first(conn)
 }
