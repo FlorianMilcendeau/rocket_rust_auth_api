@@ -13,6 +13,7 @@ mod routes;
 use routes::authenticate::authenticate_routes;
 use routes::user::user_routes;
 mod controllers;
+mod guards;
 mod models;
 mod repository;
 mod schema;

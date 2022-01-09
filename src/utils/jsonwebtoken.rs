@@ -6,7 +6,7 @@ use regex::Regex;
 use rocket::http::Status;
 use rocket::serde::{json::json, Deserialize, Serialize};
 
-use crate::models::user::User;
+use crate::guards::verify_token::JWTCredential;
 use crate::utils::http::ApiResponse;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -38,7 +38,7 @@ pub fn generate_json_web_token(claims: Claims) -> Result<String, Error> {
     return token;
 }
 
-pub fn decode_json_web_token(token: &str) -> Result<User, Error> {
+pub fn decode_json_web_token(token: &str) -> Result<JWTCredential, Error> {
     let claims = decode::<Claims>(
         token,
         &DecodingKey::from_rsa_pem(include_bytes!("../../id_rsa_pub.pem"))?,
@@ -46,11 +46,10 @@ pub fn decode_json_web_token(token: &str) -> Result<User, Error> {
     );
 
     match claims {
-        Ok(value) => Ok(User {
+        Ok(value) => Ok(JWTCredential {
             id: value.claims.sub,
             name: value.claims.name,
             email: value.claims.email,
-            password: "".to_string(),
         }),
         Err(error) => Err(error),
     }
