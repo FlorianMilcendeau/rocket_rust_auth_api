@@ -2,6 +2,7 @@
 extern crate rocket;
 #[macro_use]
 extern crate diesel;
+extern crate chrono;
 extern crate dotenv;
 
 use dotenv::dotenv;
